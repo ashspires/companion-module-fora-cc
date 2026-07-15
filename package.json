@@ -1,0 +1,29 @@
+{
+  "name": "companion-module-fora-cc",
+  "version": "1.5.0",
+  "description": "Bitfocus Companion module for FOR-A colour correctors",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ashspires/companion-module-fora-cc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ashspires/companion-module-fora-cc/issues"
+  },
+  "scripts": {
+    "clean": "node scripts/clean.js",
+    "build": "npm run clean && node scripts/build.js",
+    "package": "npm run build && node scripts/package.js",
+    "check": "node --check src/index.js"
+  },
+  "dependencies": {
+    "@companion-module/base": "1.11.3"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.1"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

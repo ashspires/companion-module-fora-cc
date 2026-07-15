@@ -1,0 +1,21 @@
+{
+  "id": "fora-cc",
+  "name": "FOR-A CC",
+  "shortname": "FOR-A CC",
+  "description": "HTTP control, polling, selected-channel variables, and presets for FOR-A colour correctors",
+  "manufacturer": "FOR-A",
+  "products": ["FOR-A 1010"],
+  "keywords": ["video", "colour corrector", "color corrector", "http", "FOR-A"],
+  "version": "1.5.0",
+  "license": "MIT",
+  "repository": "https://github.com/ashspires/companion-module-fora-cc",
+  "bugs": "https://github.com/ashspires/companion-module-fora-cc/issues",
+  "maintainers": [{ "name": "Ash" }],
+  "legacyIds": ["fora-1010"],
+  "runtime": {
+    "type": "node22",
+    "api": "nodejs-ipc",
+    "apiVersion": "1.11.3",
+    "entrypoint": "../dist/index.js"
+  }
+}
