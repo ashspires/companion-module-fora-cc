@@ -84,14 +84,16 @@ In Companion, open **Modules** and choose **Import module package**. Do not choo
 
 ## Creating a release
 
-Keep the version in `package.json` and `companion/manifest.json` in sync, then commit and push the change. Create and publish a GitHub Release using a matching tag such as `v1.7.0`.
+Every push and pull request runs the build workflow. The resulting `.tgz` is available on the workflow run's **Summary** page under **Artifacts** as `companion-module-fora-cc`. This artifact is intended for testing and is not automatically attached to a GitHub Release.
+
+For a release, keep the version in `package.json` and `companion/manifest.json` in sync, then commit and push the change. Create a tag such as `v1.7.0`:
 
 ```bash
 git tag v1.7.0
 git push origin v1.7.0
 ```
 
-When the GitHub Release is published, GitHub Actions builds the module and attaches `fora-cc-1.7.0.tgz` to the release. This is the file to manually install on an offline Companion system; the automatically generated "Source code" archives are not Companion packages.
+Create the GitHub Release manually and attach the tested `fora-cc-1.7.0.tgz` file yourself. Do not attach the outer ZIP downloaded from the workflow's Artifacts section; extract that ZIP first and attach the `.tgz` contained inside it. GitHub's automatically generated "Source code" archives are not Companion packages.
 
 ## Disclaimer
 

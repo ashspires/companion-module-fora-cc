@@ -3,8 +3,6 @@ name: Build
 on:
   push:
   pull_request:
-  release:
-    types: [published]
 
 jobs:
   build:
@@ -17,36 +15,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
-      - name: Verify release tag matches package version
-        if: github.event_name == 'release'
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          PACKAGE_TAG="v$(node -p "require('./package.json').version")"
-          if [ "$RELEASE_TAG" != "$PACKAGE_TAG" ]; then
-            echo "Release tag $RELEASE_TAG does not match package version $PACKAGE_TAG" >&2
-            exit 1
-          fi
       - run: npm run package
       - uses: actions/upload-artifact@v6
         with:
           name: companion-module-fora-cc
           path: release/*.tgz
           if-no-files-found: error
-
-  publish-release:
-    if: github.event_name == 'release'
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/download-artifact@v7
-        with:
-          name: companion-module-fora-cc
-          path: release
-      - name: Attach Companion package to GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$RELEASE_TAG" release/*.tgz --clobber
