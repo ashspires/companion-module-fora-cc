@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.0
+
+- Replaced the separate per-attribute set actions with one variable-aware Set Attribute action.
+
 ## 1.6.0
 
 - Replaced the separate per-attribute increment and decrement actions with one configurable Adjust Attribute action.

@@ -16,7 +16,7 @@ The module polls all five channels using `/video_param.cgi?fs=0` through `fs=4` 
 
 ## Features
 
-- Set processing parameters
+- Set any processing attribute with one variable-aware action
 - Increase or decrease any attribute with one variable-aware adjustment action
 - Polling and per-channel variables
 - Currently selected channel variables

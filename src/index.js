@@ -88,21 +88,31 @@ var Fora1010Instance = class extends InstanceBase {
   }
   updateSelectedVariables() { this.setVariableValues(this.selectedVariableUpdates()); }
   channelOption() { return { type: "textinput", id: "channel", label: "Channel (1 to 5)", default: "1", useVariables: true, required: true, tooltip: "Companion Channel 1 maps to FORA fs=0; Channel 5 maps to fs=4" }; }
+  attributeOption() { return { type: "dropdown", id: "attribute", label: "Attribute", default: ACTIONS[0][0], choices: ACTIONS.map(([id, name]) => ({ id, label: name })) }; }
   presetOption() { return { type: "textinput", id: "preset", label: "Preset number (1 to 100)", default: "1", useVariables: true, required: true }; }
   initActions() {
     const definitions = {};
-    for (const [id, name, command, min, max, defaultValue] of ACTIONS) {
-      definitions[id] = { name: `Set ${name}`, options: [{ type: "textinput", id: "value", label: `Value (${min} to ${max})`, default: String(defaultValue), useVariables: true, required: true }, this.channelOption()], callback: async (action, context) => {
-        const resolvedValue = await context.parseVariablesInString(String(action.options.value ?? defaultValue));
+    definitions.set_attribute = {
+      name: "Set Attribute",
+      options: [
+        this.attributeOption(),
+        { type: "textinput", id: "value", label: "Value", default: "0", useVariables: true, required: true, tooltip: "May contain a Companion variable. Values outside the selected attribute's range are clamped." },
+        this.channelOption()
+      ],
+      callback: async (action, context) => {
+        const attribute = ACTIONS.find(([id]) => id === action.options.attribute);
+        if (!attribute) throw new Error(`Unknown attribute: ${action.options.attribute}`);
+        const [id, name, command, min, max] = attribute;
+        const resolvedValue = await context.parseVariablesInString(String(action.options.value ?? "0"));
         const channel = await this.resolveChannel(action, context, name);
         const value = this.clampInteger(resolvedValue, min, max, `${name} value`);
         await this.sendAndStore(id, command, name, value, channel);
-      }};
-    }
+      }
+    };
     definitions.adjust_attribute = {
       name: "Adjust Attribute",
       options: [
-        { type: "dropdown", id: "attribute", label: "Attribute", default: ACTIONS[0][0], choices: ACTIONS.map(([id, name]) => ({ id, label: name })) },
+        this.attributeOption(),
         { type: "dropdown", id: "direction", label: "Direction", default: "increase", choices: [{ id: "increase", label: "Increase" }, { id: "decrease", label: "Decrease" }] },
         { type: "textinput", id: "amount", label: "Amount", default: "1", useVariables: true, required: true, tooltip: "May contain a Companion variable, including a global custom variable." },
         this.channelOption()

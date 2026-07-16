@@ -12,9 +12,17 @@ const stage = path.resolve('release/package')
 fs.rmSync(path.resolve('release'), { recursive: true, force: true })
 fs.mkdirSync(path.join(stage, 'dist'), { recursive: true })
 fs.mkdirSync(path.join(stage, 'companion'), { recursive: true })
-for (const file of ['package.json', 'LICENSE']) fs.copyFileSync(file, path.join(stage, file))
+fs.copyFileSync('LICENSE', path.join(stage, 'LICENSE'))
+fs.writeFileSync(path.join(stage, 'package.json'), `${JSON.stringify({
+  name: pkg.name,
+  version: pkg.version,
+  main: pkg.main,
+  license: pkg.license,
+}, null, 2)}\n`)
 for (const file of ['manifest.json', 'HELP.md']) fs.copyFileSync(path.join('companion', file), path.join(stage, 'companion', file))
-for (const file of ['index.js', 'index.js.map']) fs.copyFileSync(path.join('dist', file), path.join(stage, 'dist', file))
+fs.copyFileSync(path.join('dist', 'index.js'), path.join(stage, 'dist', 'index.js'))
 const output = path.resolve(`release/fora-cc-${pkg.version}.tgz`)
-execFileSync('tar', ['-czf', output, '-C', path.resolve('release'), 'package'])
+execFileSync('tar', ['-czf', output, '-C', path.resolve('release'), 'package'], {
+  env: { ...process.env, COPYFILE_DISABLE: '1' },
+})
 console.log(output)
