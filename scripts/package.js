@@ -2,6 +2,11 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 const pkg = require('../package.json')
+const manifest = require('../companion/manifest.json')
+
+if (pkg.version !== manifest.version) {
+  throw new Error(`Version mismatch: package.json is ${pkg.version}, companion/manifest.json is ${manifest.version}`)
+}
 
 const stage = path.resolve('release/package')
 fs.rmSync(path.resolve('release'), { recursive: true, force: true })

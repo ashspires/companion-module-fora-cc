@@ -1,5 +1,11 @@
 # Changelog
 
+## Next
+
+- Replaced the separate per-attribute increment and decrement actions with one configurable Adjust Attribute action.
+- Added a variable-aware adjustment amount suitable for Companion global custom variables.
+- Removed sensitivity actions, configuration fields, state, and the sensitivity variable.
+
 ## 1.5.0
 
 - Added currently selected channel variables.

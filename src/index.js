@@ -26,12 +26,10 @@ var POLL_FIELDS = {
   gamma_level_red: ["gammaLevelRed", 10], gamma_level_green: ["gammaLevelGreen", 10], gamma_level_blue: ["gammaLevelBlue", 10],
   gamma_curve: ["gammaCurve", 1], bypass: ["procBypass", 1], cc_mode: ["ccMode", 1]
 };
-var SENSITIVITIES = ["fine", "medium", "coarse"];
 var Fora1010Instance = class extends InstanceBase {
   constructor(internal) {
     super(internal);
     this.config = {};
-    this.sensitivity = "fine";
     this.selectedChannel = 1;
     this.values = {};
     this.presets = {};
@@ -40,7 +38,6 @@ var Fora1010Instance = class extends InstanceBase {
   }
   async init(config) {
     this.config = config || {};
-    this.sensitivity = SENSITIVITIES.includes(this.config.sensitivity_state) ? this.config.sensitivity_state : "fine";
     this.selectedChannel = this.safeStoredInteger(this.config.selected_channel_state, 1, 5, 1);
     this.presets = this.config.presets && typeof this.config.presets === "object" ? this.config.presets : {};
     this.initializeStoredValues();
@@ -59,10 +56,7 @@ var Fora1010Instance = class extends InstanceBase {
     return [
       { type: "textinput", id: "host", label: "FORA-1010 IP address or hostname", width: 8, default: "10.232.2.58", regex: Regex.HOSTNAME },
       { type: "number", id: "port", label: "HTTP port", width: 4, default: 80, min: 1, max: 65535 },
-      { type: "number", id: "poll_interval", label: "Polling interval (milliseconds)", width: 4, default: 10000, min: 250, max: 3600000, tooltip: "Polls video_param.cgi for all five channels. Default: 10000 ms (10 seconds)." },
-      { type: "number", id: "fine_step", label: "Fine sensitivity step", width: 4, default: 1, min: 1, max: 2000 },
-      { type: "number", id: "medium_step", label: "Medium sensitivity step", width: 4, default: 10, min: 1, max: 2000 },
-      { type: "number", id: "coarse_step", label: "Coarse sensitivity step", width: 4, default: 100, min: 1, max: 2000 }
+      { type: "number", id: "poll_interval", label: "Polling interval (milliseconds)", width: 4, default: 10000, min: 250, max: 3600000, tooltip: "Polls video_param.cgi for all five channels. Default: 10000 ms (10 seconds)." }
     ];
   }
   initializeStoredValues() {
@@ -73,10 +67,9 @@ var Fora1010Instance = class extends InstanceBase {
   }
   initVariables() {
     const definitions = [
-      { variableId: "sensitivity", name: "Sensitivity" },
       { variableId: "selected_channel", name: "Currently Selected Channel" }
     ];
-    const initialValues = { sensitivity: this.sensitivity, selected_channel: this.selectedChannel };
+    const initialValues = { selected_channel: this.selectedChannel };
     for (const [id, name] of ACTIONS) definitions.push({ variableId: `selected_${id}`, name: `Selected Channel ${name}` });
     for (let channel = 1; channel <= 5; channel++) for (const [id, name] of ACTIONS) {
       const variableId = this.valueKey(id, channel);
@@ -105,9 +98,26 @@ var Fora1010Instance = class extends InstanceBase {
         const value = this.clampInteger(resolvedValue, min, max, `${name} value`);
         await this.sendAndStore(id, command, name, value, channel);
       }};
-      definitions[`${id}_increment`] = { name: `Increment ${name}`, options: [this.channelOption()], callback: async (action, context) => { const channel = await this.resolveChannel(action, context, name); await this.adjustAndSend(id, command, name, min, max, channel, 1); } };
-      definitions[`${id}_decrement`] = { name: `Decrement ${name}`, options: [this.channelOption()], callback: async (action, context) => { const channel = await this.resolveChannel(action, context, name); await this.adjustAndSend(id, command, name, min, max, channel, -1); } };
     }
+    definitions.adjust_attribute = {
+      name: "Adjust Attribute",
+      options: [
+        { type: "dropdown", id: "attribute", label: "Attribute", default: ACTIONS[0][0], choices: ACTIONS.map(([id, name]) => ({ id, label: name })) },
+        { type: "dropdown", id: "direction", label: "Direction", default: "increase", choices: [{ id: "increase", label: "Increase" }, { id: "decrease", label: "Decrease" }] },
+        { type: "textinput", id: "amount", label: "Amount", default: "1", useVariables: true, required: true, tooltip: "May contain a Companion variable, including a global custom variable." },
+        this.channelOption()
+      ],
+      callback: async (action, context) => {
+        const attribute = ACTIONS.find(([id]) => id === action.options.attribute);
+        if (!attribute) throw new Error(`Unknown attribute: ${action.options.attribute}`);
+        const [id, name, command, min, max] = attribute;
+        const channel = await this.resolveChannel(action, context, name);
+        const resolvedAmount = await context.parseVariablesInString(String(action.options.amount ?? "1"));
+        const amount = this.clampInteger(resolvedAmount, 0, 2000, "Adjustment amount");
+        const direction = action.options.direction === "decrease" ? -1 : 1;
+        await this.adjustAndSend(id, command, name, min, max, channel, direction, amount);
+      }
+    };
     definitions.set_selected_channel = { name: "Set Currently Selected Channel", options: [this.channelOption()], callback: async (action, context) => {
       const resolved = await context.parseVariablesInString(String(action.options.channel ?? "1"));
       this.selectedChannel = this.clampInteger(resolved, 1, 5, "Selected channel");
@@ -138,26 +148,14 @@ var Fora1010Instance = class extends InstanceBase {
       }
       this.log("info", `Recalled preset ${preset} to channel ${channel}`);
     }};
-    definitions.set_sensitivity = { name: "Set Sensitivity", options: [{ type: "dropdown", id: "sensitivity", label: "Sensitivity", default: "fine", choices: [{ id: "fine", label: "Fine" }, { id: "medium", label: "Medium" }, { id: "coarse", label: "Coarse" }] }], callback: async (action) => this.setSensitivity(String(action.options.sensitivity || "fine")) };
-    definitions.cycle_sensitivity = { name: "Cycle Sensitivity", options: [], callback: async () => { const index = SENSITIVITIES.indexOf(this.sensitivity); this.setSensitivity(SENSITIVITIES[(index + 1) % SENSITIVITIES.length]); } };
     definitions.poll_now = { name: "Poll all channels now", options: [], callback: async () => this.pollAllChannels() };
     this.setActionDefinitions(definitions);
   }
   persistState() {
     this.config.presets = this.presets;
     this.config.selected_channel_state = this.selectedChannel;
-    this.config.sensitivity_state = this.sensitivity;
     this.saveConfig(this.config);
   }
-  setSensitivity(value) {
-    const normalized = String(value).toLowerCase();
-    if (!SENSITIVITIES.includes(normalized)) throw new Error(`Unknown sensitivity: ${value}`);
-    this.sensitivity = normalized;
-    this.setVariableValues({ sensitivity: normalized });
-    this.persistState();
-    this.log("info", `Sensitivity set to ${normalized} (step ${this.getSensitivityStep()})`);
-  }
-  getSensitivityStep() { const defaults = { fine: 1, medium: 10, coarse: 100 }; const configured = Number(this.config[`${this.sensitivity}_step`]); return Number.isFinite(configured) && configured >= 1 ? Math.round(configured) : defaults[this.sensitivity]; }
   getPollInterval() { const configured = Number(this.config.poll_interval); return Number.isFinite(configured) ? Math.min(3600000, Math.max(250, Math.round(configured))) : 10000; }
   startPolling() { this.stopPolling(); this.pollAllChannels(); this.pollTimer = setInterval(() => this.pollAllChannels(), this.getPollInterval()); }
   stopPolling() { if (this.pollTimer) clearInterval(this.pollTimer); this.pollTimer = null; }
@@ -187,7 +185,7 @@ var Fora1010Instance = class extends InstanceBase {
   }
   async resolveChannel(action, context, name) { const resolved = await context.parseVariablesInString(String(action.options.channel ?? "1")); return this.clampInteger(resolved, 1, 5, `${name} channel`); }
   async resolvePreset(action, context) { const resolved = await context.parseVariablesInString(String(action.options.preset ?? "1")); return this.clampInteger(resolved, 1, 100, "Preset number"); }
-  async adjustAndSend(id, command, name, min, max, channel, direction) { const key = this.valueKey(id, channel); const current = Number.isFinite(this.values[key]) ? this.values[key] : 0; const value = this.clampInteger(current + direction * this.getSensitivityStep(), min, max, `${name} value`); await this.sendAndStore(id, command, name, value, channel); }
+  async adjustAndSend(id, command, name, min, max, channel, direction, amount) { const key = this.valueKey(id, channel); const current = Number.isFinite(this.values[key]) ? this.values[key] : 0; const value = this.clampInteger(current + direction * amount, min, max, `${name} value`); await this.sendAndStore(id, command, name, value, channel); }
   async sendAndStore(id, command, name, value, channel) {
     const body = Buffer.from(`${command}=${value}`, "ascii");
     await this.sendPost(body, channel - 1);

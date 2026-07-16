@@ -5,8 +5,8 @@ Bitfocus Companion module for controlling FOR-A 1010 colour correctors over HTTP
 ## Features
 
 - Five-channel control with Companion channels 1–5 mapped to FOR-A `fs=0–4`
-- Set, increment and decrement actions for all supported processing parameters
-- Fine, medium and coarse sensitivity modes with configurable step sizes
+- Set actions for all supported processing parameters
+- One variable-aware adjustment action for increasing or decreasing any attribute by a chosen amount
 - Continuous polling of all channels with a configurable interval
 - Per-channel variables and currently selected channel variables
 - Store and recall presets containing all supported parameters
@@ -29,18 +29,16 @@ npm run package
 
 The package is written to `release/fora-cc-1.5.0.tgz`.
 
-## Publishing to GitHub
+## Creating a release
 
-Before publishing, replace `YOUR-USERNAME` in `package.json` and `companion/manifest.json` with your GitHub username.
+Keep the version in `package.json` and `companion/manifest.json` in sync, then commit and push the change. Create and publish a GitHub Release using a matching tag such as `v1.5.0`.
 
 ```bash
-git init
-git add .
-git commit -m "Initial release"
-git branch -M main
-git remote add origin https://github.com/YOUR-USERNAME/companion-module-fora-cc.git
-git push -u origin main
+git tag v1.5.0
+git push origin v1.5.0
 ```
+
+When the GitHub Release is published, GitHub Actions builds the module and attaches `fora-cc-1.5.0.tgz` to the release. This is the file to manually install on an offline Companion system; the automatically generated "Source code" archives are not Companion packages.
 
 ## Disclaimer
 
