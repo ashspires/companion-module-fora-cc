@@ -27,18 +27,18 @@ Create an importable Companion package:
 npm run package
 ```
 
-The package is written to `release/fora-cc-1.5.0.tgz`.
+The package is written to `release/fora-cc-1.6.0.tgz`.
 
 ## Creating a release
 
-Keep the version in `package.json` and `companion/manifest.json` in sync, then commit and push the change. Create and publish a GitHub Release using a matching tag such as `v1.5.0`.
+Keep the version in `package.json` and `companion/manifest.json` in sync, then commit and push the change. Create and publish a GitHub Release using a matching tag such as `v1.6.0`.
 
 ```bash
-git tag v1.5.0
-git push origin v1.5.0
+git tag v1.6.0
+git push origin v1.6.0
 ```
 
-When the GitHub Release is published, GitHub Actions builds the module and attaches `fora-cc-1.5.0.tgz` to the release. This is the file to manually install on an offline Companion system; the automatically generated "Source code" archives are not Companion packages.
+When the GitHub Release is published, GitHub Actions builds the module and attaches `fora-cc-1.6.0.tgz` to the release. This is the file to manually install on an offline Companion system; the automatically generated "Source code" archives are not Companion packages.
 
 ## Disclaimer
 

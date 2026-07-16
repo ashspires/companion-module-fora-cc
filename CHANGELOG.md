@@ -1,6 +1,6 @@
 # Changelog
 
-## Next
+## 1.6.0
 
 - Replaced the separate per-attribute increment and decrement actions with one configurable Adjust Attribute action.
 - Added a variable-aware adjustment amount suitable for Companion global custom variables.

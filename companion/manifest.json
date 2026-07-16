@@ -6,7 +6,7 @@
   "manufacturer": "FOR-A",
   "products": ["FOR-A 1010"],
   "keywords": ["video", "colour corrector", "color corrector", "http", "FOR-A"],
-  "version": "1.5.0",
+  "version": "1.6.0",
   "license": "MIT",
   "repository": "https://github.com/ashspires/companion-module-fora-cc",
   "bugs": "https://github.com/ashspires/companion-module-fora-cc/issues",
