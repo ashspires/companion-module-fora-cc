@@ -9,7 +9,7 @@
  *   POST /post_video.cgi?fs=N    -> updates a single parameter for channel N
  * 
  * Usage:
- *   node fora-emulator.js
+ *   node fora-emulator_v03.js
  * 
  * Then set the FORA-1010 module IP to: localhost (port 3000)
  */
