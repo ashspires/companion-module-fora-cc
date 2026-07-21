@@ -57,6 +57,7 @@ var Fora1010Instance = class extends InstanceBase {
     this.presets = {}
     this.pollTimer = null
     this.polling = false
+    this.presetSavedTimer = null
   }
  
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
@@ -73,6 +74,7 @@ var Fora1010Instance = class extends InstanceBase {
  
   async destroy() {
     this.stopPolling()
+    if (this.presetSavedTimer) clearTimeout(this.presetSavedTimer)
   }
  
   async configUpdated(config) {
@@ -130,8 +132,14 @@ var Fora1010Instance = class extends InstanceBase {
   initVariables() {
     const definitions = [
       { variableId: "selected_channel", name: "Currently Selected Channel" },
+      { variableId: "preset_held",      name: "Preset button currently held (0 = none)" },
+      { variableId: "preset_saved",     name: "Preset slot last saved (0 = none, clears after 1.5s)" },
     ]
-    const initialValues = { selected_channel: this.selectedChannel }
+    const initialValues = {
+      selected_channel: this.selectedChannel,
+      preset_held:      0,
+      preset_saved:     0,
+    }
  
     for (const [id, name] of ACTIONS) {
       definitions.push({ variableId: `selected_${id}`, name: `Selected Channel ${name}` })
@@ -146,12 +154,36 @@ var Fora1010Instance = class extends InstanceBase {
     }
  
     Object.assign(initialValues, this.selectedVariableUpdates())
+
+    // preset_stored_{preset}_{channel} — true if that slot has data saved
+    for (let preset = 1; preset <= 100; preset++) {
+      for (let channel = 1; channel <= 5; channel++) {
+        const variableId = this.presetStoredKey(preset, channel)
+        definitions.push({ variableId, name: `Preset ${preset} Channel ${channel} has stored data` })
+        initialValues[variableId] = this.presetHasData(preset, channel)
+      }
+    }
+
     this.setVariableDefinitions(definitions)
     this.setVariableValues(initialValues)
   }
  
   valueKey(actionId, channel) {
     return `ch${channel}_${actionId}`
+  }
+
+  presetStoredKey(preset, channel) {
+    return `preset_stored_${preset}_${channel}`
+  }
+
+  presetHasData(preset, channel) {
+    return !!(this.presets[String(preset)]?.[String(channel)])
+  }
+
+  updatePresetStoredVariable(preset, channel) {
+    this.setVariableValues({
+      [this.presetStoredKey(preset, channel)]: this.presetHasData(preset, channel)
+    })
   }
  
   selectedVariableUpdates() {
@@ -322,6 +354,14 @@ var Fora1010Instance = class extends InstanceBase {
         if (!this.presets[String(preset)]) this.presets[String(preset)] = {}
         this.presets[String(preset)][String(channel)] = snapshot
         this.persistState()
+        // Update stored indicator and set saved confirmation (clears after 1.5s)
+        this.updatePresetStoredVariable(preset, channel)
+        if (this.presetSavedTimer) clearTimeout(this.presetSavedTimer)
+        this.setVariableValues({ preset_held: 0, preset_saved: preset })
+        this.presetSavedTimer = setTimeout(() => {
+          this.setVariableValues({ preset_saved: 0 })
+          this.presetSavedTimer = null
+        }, 1500)
         this.log("info", `Stored channel ${channel} in preset ${preset}`)
       },
     }
@@ -344,6 +384,29 @@ var Fora1010Instance = class extends InstanceBase {
       },
     }
  
+    // Set Preset Held — call with preset number on press, 0 on release
+    // Drives preset_held variable for amber "hold to save" feedback
+    definitions.set_preset_held = {
+      name: "Set Preset Held State",
+      options: [
+        {
+          type: "textinput",
+          id: "preset",
+          label: "Preset number (0 to clear)",
+          default: "0",
+          useVariables: true,
+          required: true,
+          tooltip: "Set to the preset number on button press, 0 on short release. Drives preset_held variable for feedback.",
+        },
+      ],
+      callback: async (action, context) => {
+        const resolved = await context.parseVariablesInString(String(action.options.preset ?? "0"))
+        const preset = Number(resolved.trim())
+        const value = Number.isFinite(preset) ? Math.max(0, Math.round(preset)) : 0
+        this.setVariableValues({ preset_held: value })
+      },
+    }
+
     // Poll all channels immediately
     definitions.poll_now = {
       name: "Poll all channels now",
@@ -542,4 +605,3 @@ var Fora1010Instance = class extends InstanceBase {
 }
  
 runEntrypoint(Fora1010Instance, [])
- 

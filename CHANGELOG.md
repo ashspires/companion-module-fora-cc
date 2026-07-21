@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.0
+- Added preset_held, preset_saved variables, preset_stored_{N}_{ch} variables 
+- Added set_preset_held action
+- Added presetSavedTimer logic in store_preset
+- Added toggle actions for CCMode, gammaCurve and bypass
+
 ## 1.7.0
 
 - Replaced the separate per-attribute set actions with one variable-aware Set Attribute action.
