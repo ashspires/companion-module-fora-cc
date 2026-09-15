@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.0
+- Added reset button
+- Added 2 offset actions for sources that swapp commonly
+
+## 1.9.0
+- Added colour temperature funcion
+
 ## 1.8.0
 - Added preset_held, preset_saved variables, preset_stored_{N}_{ch} variables 
 - Added set_preset_held action
